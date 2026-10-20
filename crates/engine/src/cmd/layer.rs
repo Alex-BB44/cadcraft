@@ -399,6 +399,10 @@ fn run_state_save(s: &mut Session, p: &Value) -> Result<Value> {
     if name.is_empty() {
         return Err(bad("layerstate.save", "`name` is required"));
     }
+    // The same names as layerstate.rename takes.
+    if !valid_name(&name) {
+        return Err(bad("layerstate.save", "invalid name"));
+    }
     let d = s.doc_mut()?;
     let layers = d.layers.clone();
     d.layer_states.retain(|st| st.name != name);
@@ -525,6 +529,7 @@ mod tests {
         s.execute("layerstate.save", &json!({ "name": "  no plumbing " })).unwrap();
         assert_eq!(s.execute("layerstate.list", &json!({})).unwrap()["states"][0]["name"], "no plumbing", "names are trimmed");
         assert!(s.execute("layerstate.save", &json!({ "name": "  " })).is_err());
+        assert!(s.execute("layerstate.save", &json!({ "name": "plan/v2" })).is_err(), "what rename refuses, save refuses too");
         s.execute("layer.set", &json!({ "name": "Plumbing", "on": true, "color": 3 })).unwrap();
         s.execute("layer.set", &json!({ "name": "Walls", "frozen": false, "locked": false })).unwrap();
         s.execute("layer.new", &json!({ "name": "Later" })).unwrap();
