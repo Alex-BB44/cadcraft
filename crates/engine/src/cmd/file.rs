@@ -423,7 +423,9 @@ fn keep_model_view(s: &mut Session) -> Result<()> {
         height: view.height,
         aspect: if h > 0.0 { w / h } else { 0.0 },
     };
-    if d.saved_model_view() == Some(tile) {
+    // Nothing to do only when the view and the header's view are both as on screen already.
+    let header = d.header.point("VIEWCTR").is_some_and(|c| c.xy() == tile.center) && d.header.f64("VIEWSIZE", f64::NAN) == tile.height;
+    if d.saved_model_view() == Some(tile) && header {
         return Ok(());
     }
     let clean = !st.is_dirty();

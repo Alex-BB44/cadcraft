@@ -75,3 +75,25 @@ fn a_real_drawing_opens_where_saved() {
     }
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+#[test]
+fn a_saved_view_without_header_variables_gets_them() {
+    hooks();
+    let dir = std::env::temp_dir().join(format!("cadcraft-save-view-header-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("plan.dxf").to_string_lossy().into_owned();
+    let mut s = Session::new();
+    s.execute("line", &json!({ "points": [[0, 0], [100, 60]] })).unwrap();
+    let zoomed = View { center: Vec2::new(40.0, 30.0), height: 12.0 };
+    assert!(s.state_mut().unwrap().set_view(zoomed));
+    s.execute("saveas", &json!({ "path": path })).unwrap();
+    // The view is in the drawing already, the header variables are not (a file from elsewhere).
+    let d = std::sync::Arc::make_mut(&mut s.state_mut().unwrap().doc);
+    d.header.vars.remove("VIEWCTR");
+    d.header.vars.remove("VIEWSIZE");
+    s.execute("saveas", &json!({ "path": path })).unwrap();
+    let saved = cadcraft_io::read(&std::fs::read(&path).unwrap(), "plan.dxf").unwrap();
+    assert!(saved.header.point("VIEWCTR").is_some_and(|c| c.xy().near(zoomed.center, 1e-6)), "$VIEWCTR written again");
+    assert!(saved.header.f64("VIEWSIZE", 0.0) == zoomed.height, "$VIEWSIZE written again");
+    let _ = std::fs::remove_dir_all(&dir);
+}
