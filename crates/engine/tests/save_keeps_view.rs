@@ -34,6 +34,13 @@ fn opens_where_saved(name: &str) {
     s.execute("saveas", &json!({ "path": path })).unwrap();
     assert!(!s.state().unwrap().is_dirty(), "keeping the view is no change");
     let bytes = std::fs::read(&path).unwrap();
+    // In DXF the header's view goes along, for readers that don't read the VPORT table (a DWG has
+    // no such header variables: there the *Active VPORT is the view).
+    if name.ends_with(".dxf") {
+        let saved = cadcraft_io::read(&bytes, name).unwrap();
+        assert!(saved.header.point("VIEWCTR").is_some_and(|c| c.xy().near(zoomed.center, 1e-6)), "{name}: $VIEWCTR");
+        assert!(saved.header.f64("VIEWSIZE", 0.0) == zoomed.height, "{name}: $VIEWSIZE");
+    }
     let mut t = Session::empty();
     t.open_drawing(cadcraft_io::read(&bytes, name).unwrap(), name, Some(path.clone()));
     let v = t.state().unwrap().view();

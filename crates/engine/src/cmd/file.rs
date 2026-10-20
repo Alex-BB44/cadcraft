@@ -429,6 +429,9 @@ fn keep_model_view(s: &mut Session) -> Result<()> {
     let clean = !st.is_dirty();
     let d = std::sync::Arc::make_mut(st.drawing_arc_mut());
     d.model_view = Some(tile);
+    // The header's view too, for readers that go by $VIEWCTR / $VIEWSIZE.
+    d.header.set("VIEWCTR", cadcraft_doc::HVal::Point(tile.center.to3(0.0)));
+    d.header.set_f64("VIEWSIZE", tile.height);
     // A lone active configuration would be read first: it gets the same view.
     if let Some(t) = d.vports.iter_mut().find(|c| c.is_active()).and_then(|c| c.tiles.first_mut()) {
         t.center = tile.center;
