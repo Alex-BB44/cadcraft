@@ -404,13 +404,19 @@ impl CadApp {
 pub fn sync_view(app: &mut CadApp) {
     let want = app.options.locked_unselectable;
     let Ok(st) = app.session.state_mut() else { return };
-    if st.doc.locked_unselectable == want || st.block_edit.is_some() {
+    if st.doc.locked_unselectable == want {
         return;
     }
-    let clean = !st.is_dirty();
+    // In the Block Editor `doc` is the editor's drawing: it follows too, and its own record of
+    // unsaved changes stays as it was (the drawing itself follows once the editor closes).
+    let clean = if st.block_edit.is_some() { !st.block_unsaved() } else { !st.is_dirty() };
     std::sync::Arc::make_mut(&mut st.doc).locked_unselectable = want;
     if clean {
-        st.saved = st.doc.clone();
+        let doc = st.doc.clone();
+        match st.block_edit.as_mut() {
+            Some(b) => b.saved = doc,
+            None => st.saved = doc,
+        }
     }
 }
 
