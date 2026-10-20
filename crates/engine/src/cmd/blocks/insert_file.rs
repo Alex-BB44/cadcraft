@@ -113,11 +113,17 @@ fn rename_taken_blocks(d: &Drawing, src: &mut Drawing) {
     if renames.is_empty() {
         return;
     }
+    // Block references: inserts, and the block a multileader shows in place of its text.
     let rename = |e: &mut Entity| {
-        if let EntityKind::Insert(i) = &mut e.kind
-            && let Some(to) = renames.get(&up(&i.block))
+        let block = match &mut e.kind {
+            EntityKind::Insert(i) => Some(&mut i.block),
+            EntityKind::MLeader(m) => m.block.as_mut().map(|i| &mut i.block),
+            _ => None,
+        };
+        if let Some(b) = block
+            && let Some(to) = renames.get(&up(b))
         {
-            i.block = to.clone();
+            *b = to.clone();
         }
     };
     for h in src.model.handles() {

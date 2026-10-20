@@ -436,16 +436,27 @@ fn run_order(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 /// Make storey `id` current: the selection (objects of the storey left) is cleared.
+/// A change of what is shown (storey, blueprint): no change to the drawing, so a drawing without
+/// changes stays without changes.
+fn view_change(s: &mut Session, f: impl FnOnce(&mut cadcraft_doc::Drawing)) -> Result<()> {
+    let st = s.state_mut()?;
+    let clean = st.block_edit.is_none() && !st.is_dirty();
+    f(std::sync::Arc::make_mut(&mut st.doc));
+    if clean {
+        st.saved = st.doc.clone();
+    }
+    Ok(())
+}
+
 fn go(s: &mut Session, id: u32) -> Result<Value> {
     let d = s.doc()?;
     let name = d.storeys.get(id).map(|x| x.name.clone()).unwrap_or_default();
     if d.storeys.current != id {
         // No object is without a storey between commands (each command's new objects get one after
         // it, a drawing gets them as it opens), so the switch itself touches no object.
-        let d = s.doc_mut()?;
         // Each storey brings back its own blueprint; going to the blueprint storey ends it there:
         // the current storey is never its own blueprint.
-        d.switch_storey(id);
+        view_change(s, |d| d.switch_storey(id))?;
         s.set_selection(Vec::new());
         s.touch();
     }
@@ -491,14 +502,15 @@ fn run_ghost(s: &mut Session, p: &Value) -> Result<Value> {
             Some(id)
         }
     };
-    let d = s.doc_mut()?;
-    if d.ghost_storey.is_some() && ghost.is_none() {
-        d.ghost_last = d.ghost_storey;
-    }
-    d.ghost_storey = ghost;
-    if let Some(c) = color {
-        d.ghost_color = c;
-    }
+    view_change(s, |d| {
+        if d.ghost_storey.is_some() && ghost.is_none() {
+            d.ghost_last = d.ghost_storey;
+        }
+        d.ghost_storey = ghost;
+        if let Some(c) = color {
+            d.ghost_color = c;
+        }
+    })?;
     s.touch();
     let d = s.doc()?;
     Ok(json!({ "ghost": ghost.and_then(|g| d.storeys.get(g)).map(|g| g.name.clone()), "ghostColor": hex(d.ghost_color) }))
@@ -565,12 +577,13 @@ fn import_into(s: &mut Session, file: &str, name: &str, ghost: bool, before: &Dr
 
 /// Set the ghost storey (`None`: off), remembering the one turned off.
 fn set_ghost(s: &mut Session, ghost: Option<u32>) -> Result<Value> {
-    let d = s.doc_mut()?;
-    if d.ghost_storey.is_some() && ghost.is_none() {
-        d.ghost_last = d.ghost_storey;
-    }
-    d.ghost_storey = ghost;
-    d.fix_ghost();
+    view_change(s, |d| {
+        if d.ghost_storey.is_some() && ghost.is_none() {
+            d.ghost_last = d.ghost_storey;
+        }
+        d.ghost_storey = ghost;
+        d.fix_ghost();
+    })?;
     s.touch();
     let d = s.doc()?;
     Ok(json!({ "ghost": d.ghost_storey.and_then(|g| d.storeys.get(g)).map(|g| g.name.clone()) }))

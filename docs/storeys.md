@@ -41,7 +41,8 @@ storeys above it count 1, 2, 3, those below -1, -2. A name is yours ("2.OG", "Ro
   another storey to show that one instead, or on the lit one to hide it.
 - **Right-click** a storey: go to it, show or hide it as the blueprint, make it the start storey,
   rename it, add a storey above or below it (named at once), move it up or down, delete it.
-- The colour button sets the blueprint colour; **Settings…** opens the storey settings.
+- **Settings…** opens the storey settings (Options ▸ Storeys), with the blueprint colours for a dark
+  and a light drawing area.
 
 Wherever a storey is asked for by name, its number works too (`STOREY` then `-1`).
 

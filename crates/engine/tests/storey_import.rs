@@ -38,7 +38,19 @@ fn read(bytes: &[u8], _name: &str) -> Result<Drawing, String> {
         col_spacing: 0.0,
         row_spacing: 0.0,
     };
+    // A multileader showing their DOOR in place of text.
+    let ml = cadcraft_engine::doc::MLeader {
+        leaders: vec![vec![Vec3::new(120.0, 300.0, 0.0), Vec3::new(130.0, 310.0, 0.0)]],
+        landing: Vec3::new(130.0, 310.0, 0.0),
+        dogleg: 2.0,
+        text: None,
+        style: "Standard".into(),
+        arrow_size: 1.0,
+        spline: false,
+        block: Some(cadcraft_engine::doc::Insert { insert: Vec3::new(132.0, 310.0, 0.0), ..ins.clone() }),
+    };
     d.model.push(Entity::new(Handle(0x200), EntityKind::Insert(ins)));
+    d.model.push(Entity::new(Handle(0x201), EntityKind::MLeader(ml)));
     Ok(d)
 }
 
@@ -65,13 +77,13 @@ fn a_plan_becomes_a_ghost_storey_at_its_own_coordinates() {
     // $INSBASE 5,5 in the file must not shift the plan.
     let r = s.execute("storey.import", &json!({ "file": file("5,5") })).unwrap();
     assert_eq!(r["storey"], "Bestand Nachbar");
-    assert_eq!(r["objects"], 31);
+    assert_eq!(r["objects"], 32);
     let d = s.doc().unwrap();
     assert_eq!(d.storeys.current_storey().unwrap().name, "EG", "still drawing on EG");
     let plan = d.storeys.by_name("Bestand Nachbar").unwrap().id;
     assert_eq!(d.ghost_storey, Some(plan));
     let imported: Vec<&Entity> = d.model.iter().filter(|e| e.common.storey() == Some(plan)).map(|e| e.as_ref()).collect();
-    assert_eq!(imported.len(), 31);
+    assert_eq!(imported.len(), 32);
     assert!(imported.iter().all(|e| d.storey_view(e) == StoreyView::Ghost));
     let EntityKind::Line(l) = &imported[0].kind else { panic!("a line") };
     assert!(l.a.xy().near(cadcraft_engine::doc::geom::Vec2::new(100.0, 200.0), 1e-9), "at the file's own coordinates: {:?}", l.a);
@@ -120,5 +132,10 @@ fn their_door_and_ours_stay_apart() {
         _ => None,
     });
     assert_eq!(theirs.as_deref(), Some("DOOR$IMPORT1"));
+    let leader = d.model.iter().find_map(|e| match &e.kind {
+        EntityKind::MLeader(m) => m.block.as_ref().map(|i| i.block.clone()),
+        _ => None,
+    });
+    assert_eq!(leader.as_deref(), Some("DOOR$IMPORT1"), "a multileader's block follows the rename too");
     assert!(matches!(d.block("DOOR$IMPORT1").unwrap().entities.iter().next().unwrap().kind, EntityKind::Circle(_)));
 }

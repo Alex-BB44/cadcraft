@@ -728,3 +728,19 @@ fn each_storey_brings_back_its_own_blueprint() {
     s.execute("storey.current", &json!({ "name": "2.OG" })).unwrap();
     assert_eq!(ghost(&s).as_deref(), Some("1.OG"));
 }
+
+#[test]
+fn going_to_a_storey_or_a_blueprint_is_no_change() {
+    let (mut s, _, _) = building();
+    s.state_mut().unwrap().saved = s.state().unwrap().doc.clone();
+    assert!(!s.state().unwrap().is_dirty());
+    s.execute("storey.current", &json!({ "name": "EG" })).unwrap();
+    s.execute("storey.ghost", &json!({ "name": "OG1" })).unwrap();
+    s.execute("storey.ghost.toggle", &json!({})).unwrap();
+    s.execute("storey.up", &json!({})).unwrap();
+    assert!(!s.state().unwrap().is_dirty(), "only the view changed");
+    // A real change still counts, and stays counted across a switch.
+    line(&mut s, [0.0, 9.0], [1.0, 9.0]);
+    s.execute("storey.down", &json!({})).unwrap();
+    assert!(s.state().unwrap().is_dirty());
+}
