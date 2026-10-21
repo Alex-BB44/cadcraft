@@ -120,9 +120,9 @@ impl Default for StoreyKeys {
 
 impl StoreyKeys {
     /// Storey keys on the number keys: Ctrl+4 go to storey, Ctrl+5 down, Ctrl+6 up, Ctrl+7 choose
-    /// the blueprint, Ctrl+8 blueprint on/off.
+    /// the blueprint, Ctrl+0 blueprint on/off (Ctrl+8 is QuickCalc's).
     pub fn number_keys() -> Self {
-        StoreyKeys { up: "Cmd+6".into(), down: "Cmd+5".into(), go_to: "Cmd+4".into(), blueprint: "Cmd+8".into(), choose_blueprint: "Cmd+7".into() }
+        StoreyKeys { up: "Cmd+6".into(), down: "Cmd+5".into(), go_to: "Cmd+4".into(), blueprint: "Cmd+0".into(), choose_blueprint: "Cmd+7".into() }
     }
 
     /// (action label, command, the key) in the order the dialog shows them.
@@ -979,11 +979,12 @@ mod tests {
 
     #[test]
     fn cadcraft_shortcuts_are_never_taken_over() {
-        // Ctrl+8 is QuickCalc's, Ctrl+Z undo's: the number keys layout's Ctrl+8 stays inactive.
+        // Ctrl+8 is QuickCalc's, Ctrl+Z undo's: a storey key set to one of them stays inactive.
         assert!(taken_by(&parse("Cmd+Z").unwrap_or_else(|| panic!())).is_some());
-        let active = active(&StoreyKeys::number_keys());
-        assert!(active.iter().all(|(s, _)| taken_by(s).is_none()));
-        assert!(active.iter().any(|(_, c)| *c == "storey.up"));
+        let taken = StoreyKeys { blueprint: "Cmd+8".into(), ..StoreyKeys::number_keys() };
+        assert!(active(&taken).iter().all(|(s, c)| taken_by(s).is_none() && *c != "storey.ghost.toggle"));
+        // The number keys layout: all five work.
+        assert_eq!(active_count(&StoreyKeys::number_keys()), 5);
         // The defaults are all free.
         assert_eq!(active_count(&StoreyKeys::default()), 4);
     }

@@ -65,8 +65,7 @@ storey…, blueprint on/off, choose blueprint…. Press the keys to set one. A s
 already uses is never taken over: it is shown as taken and stays inactive. Two layouts are
 ready: the defaults (Ctrl+PageUp / Ctrl+PageDown, Ctrl+G to choose the blueprint, Ctrl+Shift+G
 on/off) and one on the number keys (Ctrl+4 go to storey, Ctrl+5 down, Ctrl+6 up, Ctrl+7 choose
-blueprint; its Ctrl+8 for blueprint on/off is QuickCalc's here and stays inactive until you pick
-another key).
+blueprint, Ctrl+0 blueprint on/off).
 Blueprint on/off works while a command runs.
 
 | Command | What it does |
