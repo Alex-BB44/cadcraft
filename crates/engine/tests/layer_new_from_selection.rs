@@ -39,10 +39,19 @@ fn nothing_selected_or_a_taken_name_changes_nothing() {
     assert!(e.contains("select"), "{e}");
     assert!(s.doc().unwrap().layer("Walls").is_none(), "no empty layer left behind");
     s.set_selection(vec![hs[0]]);
+    let undo = s.state().unwrap().undo.len();
     for bad in ["0", "", "a/b"] {
         assert!(s.execute("laynewsel", &json!({ "name": bad })).is_err(), "{bad:?}");
     }
     assert!(s.doc().unwrap().model.iter().all(|e| e.common.layer == "0"));
+    assert_eq!(s.state().unwrap().undo.len(), undo, "a refusal leaves no undo step");
+    // A handle that isn't in the drawing: refused before anything changes, the valid ones included.
+    let e = s.execute("laynewsel", &json!({ "name": "Fresh", "handles": [hs[0].hex(), "FFFFF"] })).unwrap_err().to_string();
+    assert!(e.contains("FFFFF"), "{e}");
+    let d = s.doc().unwrap();
+    assert!(d.layer("Fresh").is_none(), "no layer made");
+    assert_eq!(d.entity(hs[0]).unwrap().common.layer, "0", "nothing moved");
+    assert_eq!(s.state().unwrap().undo.len(), undo, "no undo step");
     s.execute("laynewsel", &json!({ "name": "Doors", "handles": [hs[2].hex()], "current": true })).unwrap();
     let d = s.doc().unwrap();
     assert_eq!(d.entity(hs[2]).unwrap().common.layer, "Doors", "named handles win over the selection");

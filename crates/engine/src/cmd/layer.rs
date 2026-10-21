@@ -354,10 +354,16 @@ fn run_laynewsel(s: &mut Session, p: &Value) -> Result<Value> {
     if !valid_name(&name) {
         return Err(bad("laynewsel", "invalid layer name"));
     }
-    let d = s.doc_mut()?;
+    // Everything is checked before the drawing is touched: a refusal leaves no undo step and no
+    // half-done move.
+    let d = s.doc()?;
     if d.layer(&name).is_some() {
         return Err(bad("laynewsel", format!("layer `{name}` already exists")));
     }
+    if let Some(h) = hs.iter().find(|h| d.entity(**h).is_none()) {
+        return Err(bad("laynewsel", format!("no object {}", h.hex())));
+    }
+    let d = s.doc_mut()?;
     d.layers.push(Layer::new(&name));
     for h in &hs {
         d.modify_entity(*h, |e| e.common.layer = name.clone())?;
