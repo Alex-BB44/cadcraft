@@ -16,7 +16,7 @@ fn locked_layers_can_be_left_unselectable_but_still_snap() {
     s.execute("layer.current", &json!({ "name": "0" })).unwrap();
     s.execute("layer.set", &json!({ "name": "Base", "locked": true })).unwrap();
     let pick = |s: &Session| cadcraft_engine::select::pick(s.doc().unwrap(), &Space::Model, Vec2::new(5.0, 0.0), 0.5);
-    assert_eq!(pick(&s), Some(l), "AutoCAD's way by default: picked, only edits leave it alone");
+    assert_eq!(pick(&s), Some(l), "picked by default, only edits leave it alone");
     std::sync::Arc::make_mut(&mut s.state_mut().unwrap().doc).locked_unselectable = true;
     assert_eq!(pick(&s), None);
     let d = s.doc().unwrap();
