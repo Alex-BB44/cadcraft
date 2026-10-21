@@ -21,8 +21,7 @@ An object shows when both allow it. "Plumbing off" means no plumbing, whichever 
 
 ## The blueprint (ghost storey)
 
-Any other storey can lie beneath the current one as a **blueprint** (Archicad calls it the ghost
-story): drawn in one colour (a light beige
+Any other storey can lie beneath the current one as a **blueprint**: drawn in one colour (a light beige
 unless you choose another), under everything on the current storey. You can **snap** to it, and
 nothing else: it is never selected, picked or changed, by a command, a grip or a script. The
 ghost follows the layer switches too. It is not plotted and not shown through layout viewports.
@@ -65,8 +64,9 @@ This Drawing" gives the open drawing the setup when it has no storeys yet.
 storey…, blueprint on/off, choose blueprint…. Press the keys to set one. A shortcut CADCraft
 already uses is never taken over: it is shown as taken and stays inactive. Two layouts are
 ready: the defaults (Ctrl+PageUp / Ctrl+PageDown, Ctrl+G to choose the blueprint, Ctrl+Shift+G
-on/off) and Archicad's (Ctrl+4 go to storey, Ctrl+5 down, Ctrl+6 up, Ctrl+7 choose blueprint;
-Archicad's Ctrl+8 is QuickCalc's here and stays inactive until you pick another key).
+on/off) and one on the number keys (Ctrl+4 go to storey, Ctrl+5 down, Ctrl+6 up, Ctrl+7 choose
+blueprint; its Ctrl+8 for blueprint on/off is QuickCalc's here and stays inactive until you pick
+another key).
 Blueprint on/off works while a command runs.
 
 | Command | What it does |

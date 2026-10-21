@@ -119,9 +119,9 @@ impl Default for StoreyKeys {
 }
 
 impl StoreyKeys {
-    /// Archicad's storey keys: Ctrl+4 go to storey, Ctrl+5 down, Ctrl+6 up, Ctrl+8 ghost on/off;
-    /// Ctrl+7 (Archicad's story settings) chooses the blueprint here.
-    pub fn archicad() -> Self {
+    /// Storey keys on the number keys: Ctrl+4 go to storey, Ctrl+5 down, Ctrl+6 up, Ctrl+7 choose
+    /// the blueprint, Ctrl+8 blueprint on/off.
+    pub fn number_keys() -> Self {
         StoreyKeys { up: "Cmd+6".into(), down: "Cmd+5".into(), go_to: "Cmd+4".into(), blueprint: "Cmd+8".into(), choose_blueprint: "Cmd+7".into() }
     }
 
@@ -531,8 +531,8 @@ fn shortcuts_ui(app: &mut CadApp, ui: &mut egui::Ui) {
         if ui.button(crate::tl!("Defaults")).clicked() {
             set = Some(StoreyKeys::default());
         }
-        if ui.button(crate::tl!("Archicad Layout")).clicked() {
-            set = Some(StoreyKeys::archicad());
+        if ui.button(crate::tl!("Number Keys Layout")).clicked() {
+            set = Some(StoreyKeys::number_keys());
         }
     });
     ui.label(RichText::new(crate::tl!("A shortcut CADCraft uses is never taken over.")).color(t.text_dim).small());
@@ -979,9 +979,9 @@ mod tests {
 
     #[test]
     fn cadcraft_shortcuts_are_never_taken_over() {
-        // Ctrl+8 is QuickCalc's, Ctrl+Z undo's: the Archicad layout's Ctrl+8 stays inactive.
+        // Ctrl+8 is QuickCalc's, Ctrl+Z undo's: the number keys layout's Ctrl+8 stays inactive.
         assert!(taken_by(&parse("Cmd+Z").unwrap_or_else(|| panic!())).is_some());
-        let active = active(&StoreyKeys::archicad());
+        let active = active(&StoreyKeys::number_keys());
         assert!(active.iter().all(|(s, _)| taken_by(s).is_none()));
         assert!(active.iter().any(|(_, c)| *c == "storey.up"));
         // The defaults are all free.
