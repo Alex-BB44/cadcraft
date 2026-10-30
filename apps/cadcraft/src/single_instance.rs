@@ -168,6 +168,12 @@ fn claim_at(path: &std::path::Path, files: &[String], may_hand_off: bool) -> Cla
                     }
                 };
             }
+            // Only a refused or missing socket is stale: any other failure may come from a
+            // listener that is alive, whose socket must not be taken over.
+            Err(e) if !matches!(e.kind(), std::io::ErrorKind::ConnectionRefused | std::io::ErrorKind::NotFound) => {
+                log::info!("single instance off: can't reach {} ({e})", path.display());
+                return Claim::Alone;
+            }
             Err(_) => match std::fs::remove_file(path) {
                 Ok(()) => {}
                 Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
@@ -294,6 +300,27 @@ mod tests {
         server.deliver(vec!["b.dxf".into()]);
         assert_eq!(*woken.lock().unwrap(), 2);
         assert_eq!(server.take_paths(), [PathBuf::from("a.dwg"), PathBuf::from("b.dxf")]);
+        assert!(server.take_paths().is_empty());
+    }
+
+    /// The whole exchange over a real socket: a stale socket file is taken over, a later launch
+    /// hands its files to that listener, and one that asked for its own window gets it.
+    #[cfg(windows)]
+    #[test]
+    fn a_later_launch_hands_its_files_to_the_first() {
+        let dir = std::env::temp_dir().join(format!("cadcraft-single-instance-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("instance-test.sock");
+        drop(uds_windows::UnixListener::bind(&path).unwrap());
+        assert!(path.exists(), "the stale socket file stays behind");
+
+        let Claim::Primary(server) = claim_at(&path, &[], false) else { panic!("the stale socket wasn't taken over") };
+        let files = vec![dir.join("a.dwg").to_string_lossy().into_owned()];
+        // The listener queues the files before it confirms, so they are there once this returns.
+        assert!(matches!(claim_at(&path, &files, true), Claim::HandedOff));
+        assert_eq!(server.take_paths(), [PathBuf::from(&files[0])]);
+        assert!(matches!(claim_at(&path, &files, false), Claim::Alone));
         assert!(server.take_paths().is_empty());
     }
 }
